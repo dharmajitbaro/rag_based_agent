@@ -187,7 +187,7 @@ def process_uploaded_file(uploaded_file, api_key):
     )
 
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model=model="models/text-embedding-004",
         google_api_key=api_key,
     )
 
