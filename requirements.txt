@@ -1,0 +1,10 @@
+streamlit
+python-dotenv
+requests
+langchain-google-genai
+langchain-community
+langchain
+langgraph
+duckduckgo-search
+faiss-cpu
+pypdf
