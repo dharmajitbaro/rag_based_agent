@@ -9,7 +9,6 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.tools import tool
-from langchain_community.tools import DuckDuckGoSearchRun
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -38,7 +37,46 @@ WMO_CODES = {
     96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail",
 }
 
-search_tool = DuckDuckGoSearchRun()
+@tool
+def web_search(query: str) -> str:
+    """Search the web for current information. Use this for factual questions, news, current events, or anything that needs up-to-date information. Do NOT use this for weather questions."""
+    try:
+        url = "https://html.duckduckgo.com/html/"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.post(url, data={"q": query}, headers=headers, timeout=10)
+        resp.raise_for_status()
+        from html.parser import HTMLParser
+
+        class DDGParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.results = []
+                self.capture = False
+                self.current = ""
+
+            def handle_starttag(self, tag, attrs):
+                attrs_dict = dict(attrs)
+                if tag == "a" and "result__snippet" in attrs_dict.get("class", ""):
+                    self.capture = True
+                    self.current = ""
+
+            def handle_endtag(self, tag):
+                if self.capture and tag == "a":
+                    self.capture = False
+                    if self.current.strip():
+                        self.results.append(self.current.strip())
+
+            def handle_data(self, data):
+                if self.capture:
+                    self.current += data
+
+        parser = DDGParser()
+        parser.feed(resp.text)
+        if not parser.results:
+            return f"No search results found for '{query}'."
+        return "\n\n".join(parser.results[:5])
+    except Exception as e:
+        return f"Search error: {str(e)}"
 
 
 @tool
@@ -191,7 +229,7 @@ def create_gemini_agent():
     )
     agent_executor = create_react_agent(
         model=llm,
-        tools=[search_tool, get_weather_data, get_datetime, search_documents],
+        tools=[web_search, get_weather_data, get_datetime, search_documents],
         checkpointer=memory,
         prompt=system_message,
     )
