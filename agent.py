@@ -186,9 +186,9 @@ def process_uploaded_file(uploaded_file, api_key):
         metadatas=[{"source": file_name}],
     )
 
-        embeddings = GoogleGenerativeAIEmbeddings(
-        model="gemini-embedding-2-preview",
-        google_api_key=api_key,
+    embeddings = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-2-preview",
+    google_api_key=api_key,
     )
 
     vector_store = FAISS.from_documents(chunks, embeddings)
