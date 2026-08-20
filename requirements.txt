@@ -5,6 +5,6 @@ langchain-google-genai
 langchain-community
 langchain-text-splitters
 langgraph
-duckduckgo-search
+duckduckgo-search>=5.0,<7.0
 faiss-cpu
 pypdf
