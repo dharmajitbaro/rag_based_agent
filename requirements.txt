@@ -3,7 +3,7 @@ python-dotenv
 requests
 langchain-google-genai
 langchain-community
-langchain
+langchain-text-splitters
 langgraph
 duckduckgo-search
 faiss-cpu
