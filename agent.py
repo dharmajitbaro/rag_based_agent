@@ -14,6 +14,21 @@ from langgraph.checkpoint.memory import MemorySaver
 
 load_dotenv()
 
+# Shared document store (module-level so the tool can always access it)
+_shared_store = {"vector_store": None}
+
+
+def set_vector_store(vs):
+    _shared_store["vector_store"] = vs
+
+
+def get_vector_store():
+    return _shared_store.get("vector_store")
+
+
+def clear_vector_store():
+    _shared_store["vector_store"] = None
+
 
 def get_api_key():
     key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -36,6 +51,7 @@ WMO_CODES = {
     86: "Heavy snow showers", 95: "Thunderstorm",
     96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail",
 }
+
 
 @tool
 def web_search(query: str) -> str:
@@ -148,9 +164,10 @@ def get_weather_data(city: str) -> str:
 def search_documents(query: str) -> str:
     """Search through uploaded documents to find relevant information. Use this tool when the user asks questions about their uploaded files, documents, notes, or any content they have provided. Do NOT use this if no documents have been uploaded."""
     try:
-        if "vector_store" not in st.session_state or st.session_state.vector_store is None:
+        vs = get_vector_store()
+        if vs is None:
             return "No documents have been uploaded yet. Please ask the user to upload a document first."
-        docs = st.session_state.vector_store.similarity_search(query, k=4)
+        docs = vs.similarity_search(query, k=4)
         if not docs:
             return "No relevant information found in the uploaded documents."
         results = "\n\n---\n\n".join(
@@ -187,8 +204,8 @@ def process_uploaded_file(uploaded_file, api_key):
     )
 
     embeddings = GoogleGenerativeAIEmbeddings(
-    model="gemini-embedding-2-preview",
-    google_api_key=api_key,
+        model="gemini-embedding-2-preview",
+        google_api_key=api_key,
     )
 
     vector_store = FAISS.from_documents(chunks, embeddings)
