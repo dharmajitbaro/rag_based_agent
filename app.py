@@ -1,5 +1,6 @@
 import streamlit as st
 from agent import create_gemini_agent, process_uploaded_file, get_api_key
+from agent import set_vector_store, get_vector_store, clear_vector_store
 
 # 1. Page Configuration
 st.set_page_config(page_title="Assistant D", layout="centered")
@@ -30,11 +31,13 @@ with st.sidebar:
                 api_key = get_api_key()
                 vector_store, message = process_uploaded_file(uploaded_file, api_key)
                 if vector_store is not None:
-                    if "vector_store" in st.session_state and st.session_state.vector_store is not None:
-                        st.session_state.vector_store.merge_from(vector_store)
+                    existing = get_vector_store()
+                    if existing is not None:
+                        existing.merge_from(vector_store)
+                        set_vector_store(existing)
                         st.success(f"Added! {message}")
                     else:
-                        st.session_state.vector_store = vector_store
+                        set_vector_store(vector_store)
                         st.success(message)
                 else:
                     st.error(message)
@@ -42,11 +45,11 @@ with st.sidebar:
         else:
             st.info(f"'{uploaded_file.name}' already processed.")
 
-    if "vector_store" in st.session_state and st.session_state.vector_store is not None:
+    if get_vector_store() is not None:
         st.divider()
         st.caption("Documents are loaded and ready for questions!")
         if st.button("Clear Documents"):
-            st.session_state.vector_store = None
+            clear_vector_store()
             for key in list(st.session_state.keys()):
                 if key.startswith("processed_"):
                     del st.session_state[key]
